@@ -173,7 +173,7 @@ jobs:
 
   publish:
     name: Publish to Quay and GHCR
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && github.repository == 'darioajr/skupper-scope'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && github.repository == 'darioajr/skupper-mcp'
     needs: [build, lint, vulncheck, manifests, inspector, image, devcontainer]
     runs-on: ubuntu-latest
     permissions:

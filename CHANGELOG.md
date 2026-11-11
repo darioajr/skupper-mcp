@@ -9,7 +9,9 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Security
 
-- Raise the pinned compiler to Go 1.26.10 and update `golang.org/x/net` and
+- Patch GO-2026-6859 (`net/http`) with Go 1.26.11 in CI, production and
+  development images.
+- Raise the pinned compiler to Go 1.26.11 and update `golang.org/x/net` and
   its dependencies to patched releases identified by the vulnerability scan.
 - **Breaking:** authenticated HTTP requires RFC 8693 delegated user token
   exchange into a separate Kubernetes audience. Native Kubernetes RBAC is
@@ -39,6 +41,8 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- Correct the release publishing repository guard and public repository links
+  after the rename to `darioajr/skupper-mcp`.
 - CI SBOM generation disables Anchore's built-in artifact and release uploads;
   the dedicated artifact step retains the SPDX file without broader API permissions.
 - Devcontainer checks the host Podman engine before creation; document the
@@ -128,5 +132,5 @@ network.
 - Verified against fixtures and a stub API server. Not yet verified against a
   live Skupper v2 cluster; see [ROADMAP.md](ROADMAP.md).
 
-[Unreleased]: https://github.com/darioajr/skupper-scope/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/darioajr/skupper-scope/releases/tag/v0.1.0
+[Unreleased]: https://github.com/darioajr/skupper-mcp/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/darioajr/skupper-mcp/releases/tag/v0.1.0

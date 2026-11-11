@@ -102,8 +102,8 @@ with access to a cluster running Skupper v2. To work without installing Go,
 use the [development container](#development).
 
 ```bash
-git clone https://github.com/darioajr/skupper-scope
-cd skupper-scope
+git clone https://github.com/darioajr/skupper-mcp
+cd skupper-mcp
 
 # Streamable HTTP on 127.0.0.1:8080, reading one namespace.
 SKUPPER_MCP_ALLOWED_NAMESPACES=west make run
@@ -321,7 +321,7 @@ its own graceful shutdown runs.
 
 CI builds and checks the image on pull requests, pushes to `main`, and version
 tags. After **all** validation jobs succeed, pushing a stable `vMAJOR.MINOR.PATCH`
-tag in `darioajr/skupper-scope` also builds and publishes the same `linux/amd64`
+tag in `darioajr/skupper-mcp` also builds and publishes the same `linux/amd64`
 image to both registries, with SBOM and build provenance attestations:
 
 - `quay.io/darioajr/skupper-mcp-server:MAJOR.MINOR.PATCH`

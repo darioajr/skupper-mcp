@@ -5,7 +5,7 @@
 FROM docker.io/library/node:22-bookworm-slim AS node
 
 # Keep this compiler in step with go.mod and the production Dockerfile.
-FROM docker.io/library/golang:1.26.10-bookworm AS tools
+FROM docker.io/library/golang:1.26.11-bookworm AS tools
 
 ENV GOTOOLCHAIN=local
 
@@ -18,7 +18,7 @@ RUN GOBIN=/opt/devtools go install github.com/golangci/golangci-lint/v2/cmd/gola
     && GOBIN=/opt/devtools go install golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VERSION} \
     && GOBIN=/opt/devtools go install golang.org/x/tools/gopls@${GOPLS_VERSION}
 
-FROM docker.io/library/golang:1.26.10-bookworm
+FROM docker.io/library/golang:1.26.11-bookworm
 
 ARG KUBECTL_VERSION=v1.36.4
 

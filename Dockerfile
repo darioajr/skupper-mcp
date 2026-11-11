@@ -3,7 +3,7 @@
 # Build stage. The tag must match the `toolchain` directive in go.mod, and
 # GOTOOLCHAIN=local makes a mismatch fail the build instead of silently
 # downloading a different compiler mid-build.
-FROM docker.io/library/golang:1.26.10 AS build
+FROM docker.io/library/golang:1.26.11 AS build
 
 ENV GOTOOLCHAIN=local
 WORKDIR /src
@@ -40,7 +40,7 @@ LABEL org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.title="skupper-mcp-server" \
       org.opencontainers.image.description="Read-only Model Context Protocol server for observing a Skupper v2 application network" \
       org.opencontainers.image.licenses="Apache-2.0" \
-      org.opencontainers.image.source="https://github.com/darioajr/skupper-scope"
+      org.opencontainers.image.source="https://github.com/darioajr/skupper-mcp"
 
 COPY --from=build /out/skupper-mcp-server /usr/local/bin/skupper-mcp-server
 

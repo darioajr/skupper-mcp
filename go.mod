@@ -3,7 +3,7 @@ module github.com/darioajr/skupper-scope
 go 1.26.0
 
 // Pin the patched compiler used by CI and the container build.
-toolchain go1.26.10
+toolchain go1.26.11
 
 require (
 	github.com/coreos/go-oidc/v3 v3.20.0

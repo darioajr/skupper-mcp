@@ -14,7 +14,7 @@ on volunteer time; there is no commercial support and no guaranteed patch
 window. If a fix will take a while, you will be told that rather than left
 waiting.
 
-[advisory]: https://github.com/darioajr/skupper-scope/security/advisories/new
+[advisory]: https://github.com/darioajr/skupper-mcp/security/advisories/new
 
 ## Supported versions
 
@@ -145,7 +145,7 @@ Authenticated stdio is refused at configuration validation.
   compiling with a different Go. The local CI setup action explicitly selects
   that pin and checks `go env GOVERSION`; `go-version-file` alone can choose the
   older `go` directive when `GOTOOLCHAIN=local` is set. The pin is raised when a
-  standard-library advisory affects this code's call paths — as of go1.26.10
+  standard-library advisory affects this code's call paths — as of go1.26.11
   with the patched network dependencies, `govulncheck ./...`
   reports nothing.
 - CI runs `go mod verify`, `go mod tidy` with a diff check, `govulncheck`,

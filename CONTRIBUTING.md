@@ -81,8 +81,8 @@ For development directly on the host, install the exact Go toolchain in
 needed for the Inspector check.
 
 ```bash
-git clone https://github.com/darioajr/skupper-scope
-cd skupper-scope
+git clone https://github.com/darioajr/skupper-mcp
+cd skupper-mcp
 make verify
 ```
 
