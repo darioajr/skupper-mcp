@@ -1,5 +1,11 @@
 # Skupper MCP Server
 
+[![CI](https://github.com/darioajr/skupper-mcp/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/darioajr/skupper-mcp/actions/workflows/ci.yml)
+[![Latest tag](https://img.shields.io/github/v/tag/darioajr/skupper-mcp?label=version&sort=semver)](https://github.com/darioajr/skupper-mcp/tags)
+[![Go version](https://img.shields.io/github/go-mod/go-version/darioajr/skupper-mcp)](go.mod)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![Quay.io: skupper-mcp-server](https://img.shields.io/badge/Quay.io-skupper--mcp--server-red?logo=redhat&logoColor=white)](https://quay.io/repository/darioajr/skupper-mcp-server)
+
 > **An independent, community project.** It is not affiliated with, endorsed by,
 > sponsored by, or officially supported by Red Hat, Inc. or by the Skupper
 > project maintainers. "Skupper" appears here only to describe the software this
