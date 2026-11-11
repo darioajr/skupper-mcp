@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: skupper.io/v2alpha1
+    kind: Link
+    metadata:
+      name: west-to-east
+      namespace: west
+      uid: aaaaaaaa-0000-0000-0000-00000000000a
+      resourceVersion: "1050"
+      generation: 1
+    spec:
+      cost: 1
+      tlsCredentials: link-west-to-east-secret
+      endpoints:
+        - name: inter-router
+          host: east-router.example.internal
+          port: "55671"
+    status:
+      status: Ready
+      remoteSiteId: 22222222-2222-2222-2222-222222222222
+      remoteSiteName: east
+      conditions:
+        - type: Operational
+          status: "True"
+          reason: Ready
+          observedGeneration: 1
+        - type: Ready
+          status: "True"
+          reason: Ready
+          observedGeneration: 1

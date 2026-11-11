@@ -1,0 +1,19 @@
+# RBAC for the watched namespaces, kept out of the parent overlay on purpose.
+#
+# The parent sets `namespace: skupper-mcp-crc`, and kustomize's namespace
+# transformer rewrites every resource it accumulates — including a RoleBinding
+# that explicitly says `namespace: west`. Bindings meant for other namespaces
+# therefore cannot live there: they would all collapse into the server's own
+# namespace and silently grant nothing. This directory has no namespace
+# transformer, so the namespaces written below survive.
+#
+# RBAC also requires the Role to exist in the same namespace as the RoleBinding
+# that names it, which is why each watched namespace gets its own copy.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - role-west.yaml
+  - rolebinding-west.yaml
+  - role-east.yaml
+  - rolebinding-east.yaml

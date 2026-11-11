@@ -1,0 +1,12 @@
+# The ServiceAccount lives in skupper-mcp-dev, but the Role it needs is in the
+# namespace holding the Skupper resources. Kustomize rewrites the subject
+# namespace for us; this patch only pins it explicitly so the binding is
+# readable without knowing that rule.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: skupper-mcp-reader
+subjects:
+  - kind: ServiceAccount
+    name: skupper-mcp-server
+    namespace: skupper-mcp-dev

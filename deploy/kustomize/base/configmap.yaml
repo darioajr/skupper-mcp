@@ -1,0 +1,34 @@
+# Non-secret configuration only. Credentials never appear here: the server gets
+# local Kubernetes identity from the ServiceAccount; authenticated deployments
+# instead exchange the verified user's token. OIDC trust comes from JWKS.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: skupper-mcp-server
+data:
+  SKUPPER_MCP_TRANSPORT: "http"
+  SKUPPER_MCP_ADDR: "0.0.0.0:8080"
+  SKUPPER_MCP_MCP_PATH: "/mcp"
+  SKUPPER_MCP_READ_ONLY: "true"
+  # A Pod must bind 0.0.0.0 to receive Service traffic, so the loopback rule
+  # cannot apply here. Left false in the base on purpose: an overlay that does
+  # not enable authentication has to acknowledge the exposure itself, and say
+  # what bounds it.
+  SKUPPER_MCP_ALLOW_UNAUTHENTICATED_REMOTE: "false"
+  SKUPPER_MCP_IN_CLUSTER: "true"
+  SKUPPER_MCP_MAX_ITEMS: "500"
+  SKUPPER_MCP_REQUEST_TIMEOUT: "10s"
+  SKUPPER_MCP_SESSION_TIMEOUT: "30m"
+  SKUPPER_MCP_SHUTDOWN_GRACE: "15s"
+  SKUPPER_MCP_LOG_LEVEL: "info"
+  SKUPPER_MCP_LOG_FORMAT: "json"
+  SKUPPER_MCP_LIMIT_PER_USER: "60"
+  SKUPPER_MCP_LIMIT_PER_SESSION: "30"
+  SKUPPER_MCP_LIMIT_WINDOW: "1m"
+  SKUPPER_MCP_LIMIT_BREAKER_THRESHOLD: "5"
+  SKUPPER_MCP_LIMIT_COOLDOWN: "1m"
+  SKUPPER_MCP_LIMIT_MAX_ENTRIES: "10000"
+  SKUPPER_MCP_LIMIT_ALERT_OWNER: "local-operator"
+  # Overlays must set this. An empty allowlist fails startup rather than
+  # defaulting to every namespace.
+  SKUPPER_MCP_ALLOWED_NAMESPACES: ""

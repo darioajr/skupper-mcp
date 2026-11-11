@@ -1,0 +1,47 @@
+# Example policy, not a drop-in. It denies all ingress and egress by default,
+# then reopens exactly what the server needs. Adapt the API server and DNS
+# rules to your cluster's addressing before applying it.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: skupper-mcp-server
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: skupper-mcp-server
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # MCP clients reach the server on 8080. Narrow this to the namespaces that
+    # actually host clients; an empty namespaceSelector would admit the cluster.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: skupper-mcp-clients
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # DNS.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # The Kubernetes API server. Replace this CIDR with your control plane's.
+    # There is no way to express "the API service" portably in a NetworkPolicy.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443

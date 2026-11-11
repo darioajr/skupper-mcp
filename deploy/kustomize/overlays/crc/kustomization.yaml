@@ -1,0 +1,44 @@
+# OpenShift Local (CRC) overlay: one cluster, two watched namespaces, no
+# identity provider.
+#
+# Authentication is off here because CRC is a single-user cluster on a laptop
+# and there is no issuer to trust. That is why the Route below is not the demo
+# overlay's Route: reaching this overlay from outside the cluster is a
+# deliberate local-testing choice, and the NetworkPolicy the script generates
+# is what bounds it. Do not copy this overlay to a shared cluster — use
+# ../demo, which requires an issuer.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: skupper-mcp-crc
+
+# The RBAC for the watched namespaces is deliberately not listed here: this
+# overlay sets a namespace, and the transformer would rewrite those bindings
+# into it. Apply ./watched-rbac separately (the script does).
+resources:
+  - ../../base
+  - route.yaml
+
+# Built locally and pushed to the cluster's internal registry by
+# scripts/crc-openshift.sh deploy.
+images:
+  - name: skupper-mcp-server
+    newName: image-registry.openshift-image-registry.svc:5000/skupper-mcp-crc/skupper-mcp-server
+    newTag: latest
+
+configMapGenerator:
+  - name: skupper-mcp-server
+    behavior: merge
+    literals:
+      - SKUPPER_MCP_ALLOWED_NAMESPACES=west,east
+      - SKUPPER_MCP_CURRENT_CONTEXT_ALIAS=crc
+      - SKUPPER_MCP_LOG_LEVEL=debug
+      - SKUPPER_MCP_LOG_FORMAT=text
+      # A Pod binds 0.0.0.0, and there is no issuer on CRC to authenticate
+      # against. What bounds the exposure is the NetworkPolicy plus the fact
+      # that the cluster is a local VM.
+      - SKUPPER_MCP_ALLOW_UNAUTHENTICATED_REMOTE=true
+
+replicas:
+  - name: skupper-mcp-server
+    count: 1

@@ -1,0 +1,32 @@
+# Everything the build does not need. Keeping this tight matters for more than
+# speed: it is what stops a local kubeconfig or .env from entering an image.
+.git/
+.github/
+.devcontainer/
+.gitignore
+.golangci.yml
+*.md
+!go.mod
+docs/
+deploy/
+Makefile
+Dockerfile
+.dockerignore
+LICENSE
+NOTICE
+
+# Local credentials and state, never in an image.
+.env
+*.kubeconfig
+kubeconfig
+.kube/
+*.pem
+*.key
+*.crt
+
+# Build and test output.
+bin/
+dist/
+coverage.*
+*.out
+*.test

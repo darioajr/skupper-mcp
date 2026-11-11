@@ -1,0 +1,33 @@
+# Development overlay: one namespace, debug logging, no authentication.
+#
+# There is no auth here because dev is expected to be reached through
+# `kubectl port-forward`, which terminates on loopback. Do not expose this
+# overlay through an Ingress or Route.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: skupper-mcp-dev
+
+resources:
+  - ../../base
+
+configMapGenerator:
+  - name: skupper-mcp-server
+    behavior: merge
+    literals:
+      - SKUPPER_MCP_ALLOWED_NAMESPACES=skupper-dev
+      - SKUPPER_MCP_CURRENT_CONTEXT_ALIAS=dev
+      - SKUPPER_MCP_LOG_LEVEL=debug
+      - SKUPPER_MCP_LOG_FORMAT=text
+      - SKUPPER_MCP_MAX_ITEMS=100
+      # No authentication in dev. The base NetworkPolicy is what bounds who can
+      # reach port 8080; without it, anything in the cluster could read every
+      # allowed namespace. Reach this overlay with `kubectl port-forward`, and
+      # do not put an Ingress or Route in front of it.
+      - SKUPPER_MCP_ALLOW_UNAUTHENTICATED_REMOTE=true
+
+patches:
+  - path: rolebinding-patch.yaml
+    target:
+      kind: RoleBinding
+      name: skupper-mcp-reader

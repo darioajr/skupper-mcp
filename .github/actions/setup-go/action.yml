@@ -1,0 +1,32 @@
+name: Set up the pinned Go toolchain
+description: Select the toolchain directive explicitly, including with GOTOOLCHAIN=local
+runs:
+  using: composite
+  steps:
+    - name: Read the compiler pin
+      id: pin
+      shell: bash
+      run: |
+        pin=$(awk '$1 == "toolchain" { print $2 }' go.mod)
+        if [[ ! "$pin" =~ ^go1\.[0-9]+\.[0-9]+$ ]]; then
+          echo "go.mod must declare an exact stable toolchain version" >&2
+          exit 1
+        fi
+        echo "version=${pin#go}" >> "$GITHUB_OUTPUT"
+        echo "expected=$pin" >> "$GITHUB_OUTPUT"
+    - uses: actions/setup-go@v7
+      with:
+        go-version: ${{ steps.pin.outputs.version }}
+        cache: true
+    - name: Verify the compiler in use
+      shell: bash
+      env:
+        GOTOOLCHAIN: local
+        EXPECTED_GO: ${{ steps.pin.outputs.expected }}
+      run: |
+        actual=$(go env GOVERSION)
+        if [[ "$actual" != "$EXPECTED_GO" ]]; then
+          echo "Compiler mismatch: expected $EXPECTED_GO, got $actual" >&2
+          exit 1
+        fi
+        go version

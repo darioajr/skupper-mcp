@@ -1,0 +1,248 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+  pull_request:
+  workflow_dispatch:
+
+# Registry write permission is scoped to the tag-only publishing job.
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Fail if the runner's Go differs from the toolchain go.mod pins, rather than
+  # silently downloading a different compiler.
+  GOTOOLCHAIN: local
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-go
+
+      - name: Verify module files are tidy
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l .) || exit $?
+          if [ -n "$unformatted" ]; then
+            echo "These files are not gofmt-clean:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: Test with the race detector
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Coverage summary
+        run: go tool cover -func=coverage.out | tail -30
+
+      - name: Build
+        run: go build -trimpath -o /tmp/skupper-mcp-server ./cmd/skupper-mcp-server
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: coverage.out
+          retention-days: 7
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-go
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12.2
+          args: --timeout=5m
+
+  vulncheck:
+    name: Vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-go
+      - name: govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+  manifests:
+    name: Validate Kustomize overlays
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Render every overlay
+        run: make manifests
+
+  inspector:
+    name: MCP Inspector end-to-end
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-go
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - name: Drive the server with MCP Inspector
+        run: ./scripts/inspector-e2e.sh
+
+  image:
+    name: Build the container image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: Build without pushing
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          load: true
+          tags: skupper-mcp-server:ci
+      - name: Confirm the image runs as a non-root user
+        run: |
+          user=$(docker image inspect skupper-mcp-server:ci --format '{{.Config.User}}')
+          echo "image user: ${user}"
+          case "${user}" in
+            ""|"0"|"root"|"0:0") echo "image must not run as root"; exit 1 ;;
+          esac
+      - name: Generate an SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: skupper-mcp-server:ci
+          format: spdx-json
+          output-file: sbom.spdx.json
+          # The next step owns artifact upload; release handling needs broader
+          # API permissions than this validation job should have.
+          upload-artifact: false
+          upload-release-assets: false
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sbom
+          path: sbom.spdx.json
+          retention-days: 7
+
+  devcontainer:
+    name: Validate the development container
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: Build without pushing
+        uses: docker/build-push-action@v7
+        with:
+          context: .devcontainer
+          file: .devcontainer/Dockerfile
+          push: false
+          load: true
+          tags: skupper-scope-dev:ci
+      - name: Verify the development environment without host Go
+        run: |
+          docker run --rm \
+            --mount "type=bind,source=$PWD,target=/workspaces/skupper-scope,readonly" \
+            skupper-scope-dev:ci bash -euc '
+              test "$(id -u)" -ne 0
+              bash .devcontainer/post-create.sh
+              node --version
+              npm --version
+              gopls version
+              make verify
+              go build -o /tmp/skupper-mcp-server ./cmd/skupper-mcp-server
+            '
+
+  publish:
+    name: Publish to Quay and GHCR
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && github.repository == 'darioajr/skupper-scope'
+    needs: [build, lint, vulncheck, manifests, inspector, image, devcontainer]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate release version and credentials
+        id: release
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+          QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Release tags must use vMAJOR.MINOR.PATCH (no prerelease suffix)." >&2
+            exit 1
+          fi
+          version=$(sed -n 's/^const Version = "\([^"]*\)"$/\1/p' internal/mcpserver/server.go)
+          if [[ "${RELEASE_TAG#v}" != "$version" ]]; then
+            echo "Tag $RELEASE_TAG must match internal/mcpserver/server.go Version ($version)." >&2
+            exit 1
+          fi
+          if [[ -z "$QUAY_USERNAME" || -z "$QUAY_PASSWORD" ]]; then
+            echo "Configure QUAY_USERNAME and QUAY_PASSWORD repository secrets." >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v4
+      - name: Log in to Quay
+        uses: docker/login-action@v4
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push the image to both registries
+        id: push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          build-args: VERSION=${{ steps.release.outputs.version }}
+          tags: |
+            quay.io/darioajr/skupper-mcp-server:${{ steps.release.outputs.version }}
+            ghcr.io/darioajr/skupper-mcp-server:${{ steps.release.outputs.version }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.release.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          sbom: true
+          provenance: mode=min
+      - name: Record published image references
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          IMAGE_DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          {
+            echo '### Published container image (linux/amd64)'
+            echo
+            echo "- quay.io/darioajr/skupper-mcp-server:$RELEASE_VERSION"
+            echo "- ghcr.io/darioajr/skupper-mcp-server:$RELEASE_VERSION"
+            echo
+            echo "Digest: $IMAGE_DIGEST"
+            echo
+            echo 'Use the digest in deployment manifests to pin the published image.'
+          } >> "$GITHUB_STEP_SUMMARY"

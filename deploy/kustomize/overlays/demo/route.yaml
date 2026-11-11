@@ -1,0 +1,18 @@
+# OpenShift only. Omit this file on plain Kubernetes and use an Ingress.
+#
+# TLS terminates at the edge and the backend stays plain HTTP inside the
+# cluster, which is why the NetworkPolicy in the base restricts who may reach
+# port 8080.
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: skupper-mcp-server
+spec:
+  to:
+    kind: Service
+    name: skupper-mcp-server
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

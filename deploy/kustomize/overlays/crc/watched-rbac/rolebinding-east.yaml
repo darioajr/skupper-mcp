@@ -1,0 +1,17 @@
+# One RoleBinding per watched namespace, same rule as the demo overlay: the
+# server's read access can never exceed its allowlist, because a namespace
+# missing a binding stays unreadable even if it is listed in
+# SKUPPER_MCP_ALLOWED_NAMESPACES.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: skupper-mcp-reader-east
+  namespace: east
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: skupper-mcp-reader
+subjects:
+  - kind: ServiceAccount
+    name: skupper-mcp-server
+    namespace: skupper-mcp-crc

@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: skupper.io/v2alpha1
+    kind: Listener
+    metadata:
+      name: backend
+      namespace: west
+      uid: bbbbbbbb-0000-0000-0000-00000000000b
+      resourceVersion: "1060"
+      generation: 2
+    spec:
+      routingKey: backend
+      host: backend
+      port: 8080
+      type: tcp
+      tlsCredentials: listener-backend-secret
+    status:
+      status: Ready
+      hasMatchingConnector: true
+      conditions:
+        - type: Configured
+          status: "True"
+          reason: Ready
+          observedGeneration: 2
+        - type: Matched
+          status: "True"
+          reason: Ready
+          observedGeneration: 2
+        - type: Ready
+          status: "True"
+          reason: Ready
+          observedGeneration: 2

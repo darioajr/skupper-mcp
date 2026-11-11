@@ -1,0 +1,16 @@
+# OpenShift Route with edge TLS, same shape as the demo overlay's. The backend
+# stays plain HTTP inside the cluster; the NetworkPolicy that
+# scripts/crc-openshift.sh generates is what decides who may reach port 8080.
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: skupper-mcp-server
+spec:
+  to:
+    kind: Service
+    name: skupper-mcp-server
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

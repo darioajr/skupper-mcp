@@ -1,0 +1,57 @@
+# A deliberately small linter set. Every entry earns its place; there is no
+# "enable-all minus a deny list", because that produces churn rather than
+# quality.
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    # Correctness.
+    - errcheck      # an ignored error in a read-only server is a silent wrong answer
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - bodyclose     # a leaked HTTP body leaks a connection to an API server
+    - errorlint     # this codebase relies on errors.Is/As for allowlist denials
+    - nilerr
+    - rowserrcheck
+    # Security.
+    - gosec
+    # Style, limited to what changes meaning.
+    - misspell
+    - unconvert
+    - copyloopvar
+
+  settings:
+    errcheck:
+      # Writing to an http.ResponseWriter after the header is sent cannot be
+      # acted on, so those returns are explicitly discarded at the call site.
+      check-type-assertions: true
+    gosec:
+      excludes:
+        # G104 duplicates errcheck.
+        - G104
+    staticcheck:
+      checks:
+        - all
+
+  exclusions:
+    rules:
+      # Test files may ignore errors from helpers whose failure the test itself
+      # would surface.
+      - path: _test\.go
+        linters:
+          - errcheck
+          - gosec
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/darioajr/skupper-scope

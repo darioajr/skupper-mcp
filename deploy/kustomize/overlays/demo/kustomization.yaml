@@ -1,0 +1,52 @@
+# Demonstration overlay: two watched namespaces, OAuth 2.0 enabled, and an
+# OpenShift Route.
+#
+# The issuer and audience below are placeholders. Point them at your own
+# identity provider before applying; the server refuses to start if the issuer
+# is not reachable over https.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: skupper-mcp-demo
+
+resources:
+  - ../../base
+  - route.yaml
+
+configMapGenerator:
+  - name: skupper-mcp-server
+    behavior: merge
+    literals:
+      - SKUPPER_MCP_ALLOWED_NAMESPACES=west,east
+      - SKUPPER_MCP_CURRENT_CONTEXT_ALIAS=demo
+      - SKUPPER_MCP_AUTH_ENABLED=true
+      - SKUPPER_MCP_AUTH_ISSUER=https://keycloak.example.com/realms/skupper
+      - SKUPPER_MCP_AUTH_AUDIENCE=skupper-mcp-server
+      - SKUPPER_MCP_AUTH_RESOURCE_METADATA_URL=https://skupper-mcp.apps.example.com/.well-known/oauth-protected-resource
+      - SKUPPER_MCP_AUTH_RESOURCE_URL=https://skupper-mcp.apps.example.com/mcp
+      - SKUPPER_MCP_AUTH_SCOPE_READ=skupper:read
+      - SKUPPER_MCP_AUTH_SCOPE_DIAGNOSE=skupper:diagnose
+      - SKUPPER_MCP_AUTH_EXCHANGE_URL=https://keycloak.example.com/realms/skupper/protocol/openid-connect/token
+      - SKUPPER_MCP_AUTH_KUBERNETES_AUDIENCE=kubernetes
+      - SKUPPER_MCP_AUTH_EXCHANGE_CLIENT_ID=skupper-mcp-exchange
+      - SKUPPER_MCP_LIMIT_ALERT_OWNER=deployment-security-owner
+
+# Native-user mode needs no Skupper grant for the server's ServiceAccount.
+# Apply watched-rbac separately, after replacing the example native group.
+# Inject AUTH_EXCHANGE_CLIENT_SECRET through your approved runtime mechanism;
+# no credential or Secret resource belongs in this repository.
+patches:
+  - target:
+      kind: RoleBinding
+      name: skupper-mcp-reader
+    patch: |-
+      $patch: delete
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      metadata:
+        name: skupper-mcp-reader
+
+replicas:
+  - name: skupper-mcp-server
+    # Limits are process-local. Scaling requires shared gateway enforcement.
+    count: 1

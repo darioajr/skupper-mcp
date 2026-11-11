@@ -1,0 +1,25 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: skupper-mcp-reader
+  namespace: west
+rules:
+  - apiGroups: ["skupper.io"]
+    resources: ["sites", "links", "listeners", "connectors"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: skupper-mcp-native-readers
+  namespace: west
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: skupper-mcp-reader
+subjects:
+  # Replace with a group already authorized for native access to this data.
+  # An MCP deployment must never be the reason to widen a user's native rights.
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: replace-with-existing-native-reader-group

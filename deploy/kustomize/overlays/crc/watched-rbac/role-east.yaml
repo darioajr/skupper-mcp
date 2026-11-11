@@ -1,0 +1,21 @@
+# The base Role lives in the server's own namespace, so a RoleBinding in a
+# watched namespace has nothing to point at. RBAC requires the Role to exist in
+# the same namespace as the RoleBinding that names it, so each watched
+# namespace gets its own copy of the same four read-only rules.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: skupper-mcp-reader
+  namespace: east
+rules:
+  - apiGroups:
+      - skupper.io
+    resources:
+      - sites
+      - links
+      - listeners
+      - connectors
+    verbs:
+      - get
+      - list
+      - watch

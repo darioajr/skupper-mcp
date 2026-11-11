@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: skupper.io/v2alpha1
+    kind: Connector
+    metadata:
+      name: backend
+      namespace: east
+      uid: cccccccc-0000-0000-0000-00000000000c
+      resourceVersion: "2090"
+      generation: 1
+    spec:
+      routingKey: backend
+      selector: app=backend
+      port: 8080
+      type: tcp
+      tlsCredentials: connector-backend-secret
+    status:
+      status: Ready
+      hasMatchingListener: true
+      selectedPods:
+        - name: backend-7d9f4c8b6-abcde
+          ip: 10.128.2.41
+        - name: backend-7d9f4c8b6-fghij
+          ip: 10.128.2.42
+      conditions:
+        - type: Ready
+          status: "True"
+          reason: Ready
+          observedGeneration: 1

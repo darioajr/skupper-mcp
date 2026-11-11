@@ -1,0 +1,7 @@
+# Separate rendering preserves the watched namespaces instead of rewriting
+# these grants into the MCP server's namespace. Apply only after owner approval.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - west.yaml
+  - east.yaml

@@ -1,0 +1,39 @@
+# The complete set of permissions this server needs.
+#
+# Four resources, in one API group, with read verbs only. There is no rule for
+# secrets, for the core ("") group, or for any write verb, because no code path
+# exists that would use one. `watch` is granted because the client-go list
+# machinery may use it for retries; remove it if your policy forbids it, and
+# the server still works.
+#
+# This is a Role, not a ClusterRole: a RoleBinding per watched namespace keeps
+# the blast radius equal to the namespaces actually in the allowlist. The
+# overlays bind it where it is needed.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: skupper-mcp-reader
+rules:
+  - apiGroups:
+      - skupper.io
+    resources:
+      - sites
+      - links
+      - listeners
+      - connectors
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: skupper-mcp-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: skupper-mcp-reader
+subjects:
+  - kind: ServiceAccount
+    name: skupper-mcp-server

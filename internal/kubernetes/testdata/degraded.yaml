@@ -1,0 +1,81 @@
+# A network in trouble: the link is Pending, the listener sees no connector,
+# and the connector's selector matches no pods.
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: skupper.io/v2alpha1
+    kind: Site
+    metadata:
+      name: north
+      namespace: north
+      uid: 33333333-3333-3333-3333-333333333333
+      generation: 4
+    status:
+      status: Pending
+      message: waiting for router
+      conditions:
+        - type: Ready
+          status: "False"
+          reason: Pending
+          message: waiting for router
+          observedGeneration: 2
+  - apiVersion: skupper.io/v2alpha1
+    kind: Link
+    metadata:
+      name: north-to-south
+      namespace: north
+      uid: dddddddd-0000-0000-0000-00000000000d
+      generation: 1
+    spec:
+      cost: 5
+      tlsCredentials: north-link-secret
+    status:
+      status: Pending
+      message: no remote endpoint resolved yet
+      conditions:
+        - type: Ready
+          status: "False"
+          reason: Pending
+          observedGeneration: 1
+  - apiVersion: skupper.io/v2alpha1
+    kind: Listener
+    metadata:
+      name: orphan
+      namespace: north
+      uid: eeeeeeee-0000-0000-0000-00000000000e
+      generation: 1
+    spec:
+      routingKey: orphan-key
+      host: orphan
+      port: 9090
+      type: http2
+    status:
+      status: Pending
+      hasMatchingConnector: false
+      conditions:
+        - type: Ready
+          status: "False"
+          reason: Pending
+          observedGeneration: 1
+  - apiVersion: skupper.io/v2alpha1
+    kind: Connector
+    metadata:
+      name: unbound
+      namespace: north
+      uid: ffffffff-0000-0000-0000-00000000000f
+      generation: 1
+    spec:
+      routingKey: unbound-key
+      selector: app=missing
+      port: 9090
+      type: tcp
+    status:
+      status: Error
+      message: no pods matched selector
+      hasMatchingListener: false
+      conditions:
+        - type: Ready
+          status: "False"
+          reason: Error
+          message: no pods matched selector
+          observedGeneration: 1
